@@ -2,18 +2,19 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/github/v/release/sfgawrgarf/MHTI?color=blue)
+![Version](https://img.shields.io/badge/version-2.1.6-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.12+-green.svg)
 ![Vue](https://img.shields.io/badge/Vue-3.5-brightgreen.svg)
+![Node](https://img.shields.io/badge/Node-24-339933.svg)
 ![License](https://img.shields.io/badge/license-MIT-orange.svg)
 
-**自动从 TMDB 获取剧集元数据，智能整理媒体文件，支持日文动画与 `.strm` 媒体库**
+**自动从 TMDB 获取剧集元数据，智能整理媒体文件**
 
 [功能特性](#-功能特性) •
 [快速开始](#-快速开始) •
 [系统架构](#-系统架构) •
-[API 文档](#-api-端点) •
-[开发指南](#-开发指南)
+[API 端点](#-api-端点) •
+[开发指南](#-开发规范)
 
 </div>
 
@@ -21,27 +22,27 @@
 
 ## 📖 项目简介
 
-MHTI 是一个全栈 Web 应用，专为媒体文件管理设计。它能够自动解析视频文件名，从 TMDB 获取元数据，生成 NFO 文件，并智能整理媒体库，兼容 Emby/Jellyfin 等媒体服务器。
-
-除常规剧集外，MHTI 也面向日文动画文件名进行了优化：可识别常见字幕组标签、制作组标签、日文集数写法与 `.strm` 文件；可选的 OpenAI 兼容 AI 服务会在实际刮削流程中辅助清洗标题、生成 TMDB 检索别名并校验候选。
+MHTI 是一个全栈 Web 应用，专为媒体文件管理设计。它能够自动解析视频文件名，从 TMDB 获取元数据，生成 NFO 文件，并智能整理媒体库，兼容 Emby/Jellyfin 等媒体服务器。支持本地目录与 115 网盘两种来源，视频可在线整理或下载后整理。
 
 ## ✨ 功能特性
 
 | 功能模块 | 说明 |
 |---------|------|
-| 🎬 **文件名解析** | 智能解析标准、中文、日文动画等命名格式，自动提取剧名、季号和集号 |
-| 🤖 **AI 辅助识别** | 支持 OpenAI 兼容接口，辅助清洗标题、生成检索别名并在 TMDB 候选中谨慎选择 |
-| 🔍 **TMDB 集成** | 自动搜索匹配，获取剧集/电影元数据，核验季集存在性 |
-| 📝 **NFO 生成** | 生成 Emby/Jellyfin 兼容的 NFO 文件 |
-| 📁 **文件整理** | 支持复制/移动/硬链接/软链接四种模式 |
-| ☁️ **115 网盘** | 扫码登录 115 网盘，支持 115→115/115→本地 整理 |
-| 🖼️ **图片下载** | 自动下载海报、背景图、剧集缩略图 |
-| 📺 **字幕关联** | 自动识别并关联同名字幕文件 |
-| 👁️ **文件夹监控** | 实时/兼容/事件三种模式，支持本地与 115 网盘目录 |
-| 🧾 **版本与去重** | 记录已成功整理的媒体身份，监控任务自动跳过已完成的同一源文件 |
-| 🔗 **Emby 集成** | 媒体库冲突检测，避免重复 |
-| 🔐 **安全认证** | JWT 认证，多会话管理 |
-| 🌙 **主题切换** | 支持亮色/暗色主题 |
+| 🎬 **文件名解析** | 插件式解析器（清洗 → 标准 → 日语 → 中文 → 剧名兜底），支持日期前缀、方括号结构、裸数字与全角井号集数、OVA/特别篇标记，自动修正季号 |
+| 🔍 **TMDB 集成** | 搜索匹配、季/集存在性核验、手动搜索填 ID；认证检测含 Token 有效性与 R18 可见性两项 |
+| 🧩 **处理冲突** | 匹配不到或匹配到多季时进入冲突步骤，逐级手动选择剧集/季/集，也支持沿用上次匹配直接重试 |
+| 📝 **NFO 生成** | 生成 Emby/Jellyfin 兼容的剧集、季、单集 NFO |
+| 📁 **文件整理** | 复制 / 移动 / 硬链接 / 软链接四种模式，可配置命名模板与过滤规则 |
+| ☁️ **115 网盘** | 扫码登录，展示账号身份、会员、容量与登录设备；支持 115→115 在线整理与 115→本地下载整理 |
+| 🖼️ **图片下载** | 自动下载海报、背景图、剧照与单集缩略图 |
+| 📺 **字幕关联** | 识别同名字幕并批量关联、重命名 |
+| 👁️ **目录监控** | 实时 / 兼容（全量轮询）/ 事件（115 生活事件增量）三种模式，支持本地与 115 目录 |
+| 🔗 **Emby 集成** | 媒体库冲突检测与入库校验 |
+| 🗂️ **任务与记录** | 手动任务、刮削任务、定时任务三类队列；记录支持实时进度、耗时跳动、超时节点定位 |
+| ♻️ **记录级操作** | 重刮、重新整理、删除产物文件、撤销，列表支持多选批量重试 |
+| 🔐 **安全认证** | JWT + 刷新令牌，多会话管理、登录历史与失败次数限制 |
+| 📋 **日志管理** | 分级落库，支持级别/模块/关键词/时间筛选、指标条、保留策略与导出 |
+| 🌙 **界面** | 六域模块化前端、亮/暗主题、⌘K 命令面板、移动端底部 TabBar、列表页统一「单卡框架」 |
 
 ---
 
@@ -52,105 +53,95 @@ MHTI 是一个全栈 Web 应用，专为媒体文件管理设计。它能够自�
 ```mermaid
 graph TB
     subgraph Client["🌐 客户端"]
-        Browser[浏览器]
+        Browser[浏览器 桌面 / 移动]
     end
 
     subgraph Docker["🐳 Docker 容器"]
-        subgraph Gateway["网关层"]
-            Caddy[Caddy<br/>反向代理<br/>端口 8000]
+        subgraph Gateway["入口层"]
+            Caddy[Caddy<br/>静态文件 + 反向代理<br/>对外 8000]
         end
 
         subgraph Frontend["前端层"]
-            Vue[Vue 3 SPA<br/>静态文件]
+            Vue["Vue 3 SPA<br/>/app/static"]
         end
 
         subgraph Backend["后端层"]
-            FastAPI[FastAPI<br/>REST API]
-            WebSocket[WebSocket<br/>实时通信]
+            FastAPI["FastAPI<br/>uvicorn 内网 8001"]
+            WebSocket["WebSocket<br/>/ws"]
         end
 
-        subgraph Services["服务层"]
-            ScraperSvc[ScraperService<br/>刮削编排]
-            TMDBSvc[TMDBService<br/>元数据获取]
-            AISvc[AIProviderService<br/>可选 AI 辅助]
-            ParserSvc[ParserService<br/>文件名解析]
-            NFOSvc[NFOService<br/>NFO生成]
-            ImageSvc[ImageService<br/>图片下载]
-            P115Svc[P115Service<br/>115 网盘]
-            WatcherSvc[WatcherService<br/>文件监控]
-            RenameSvc[RenameService<br/>文件整理]
-            SchedulerSvc[SchedulerService<br/>定时任务]
-        end
-
-        subgraph Core["核心层"]
-            Container[DI 容器]
-            Database[(SQLite)]
-            Auth[JWT 认证]
+        subgraph Layers["后端四层"]
+            ApiLayer["接入层 api/v1<br/>路由 · 鉴权 · 协议转换"]
+            AppLayer["应用层 application<br/>用例编排 · 任务队列 · 监控"]
+            DomainLayer["基础能力层 domain<br/>解析 · 元数据 · 产物 · 集成 · 身份 · 系统"]
+            InfraLayer["数据层 infrastructure<br/>仓储 · 连接池 · 实时通道 · 安全"]
         end
     end
 
     subgraph External["🌍 外部服务"]
         TMDB[TMDB API]
-        AI[OpenAI 兼容 API]
         Emby[Emby Server]
-        P115["115 网盘<br/>生活事件 API"]
+        P115["115 网盘 API"]
     end
 
     Browser --> Caddy
     Caddy --> Vue
     Caddy -->|/api/*| FastAPI
     Caddy -->|/ws| WebSocket
-    FastAPI --> Services
-    WebSocket --> Services
-    Services --> Core
-    ScraperSvc --> TMDBSvc
-    ScraperSvc --> AISvc
-    ScraperSvc --> ParserSvc
-    ScraperSvc --> NFOSvc
-    ScraperSvc --> ImageSvc
-    ScraperSvc --> RenameSvc
-    ScraperSvc --> P115Svc
-    TMDBSvc --> TMDB
-    AISvc --> AI
-    Services --> Emby
-    P115Svc --> P115
-    WatcherSvc --> P115Svc
+    FastAPI --> ApiLayer
+    WebSocket --> ApiLayer
+    ApiLayer --> AppLayer
+    AppLayer --> DomainLayer
+    AppLayer --> InfraLayer
+    DomainLayer --> InfraLayer
+    DomainLayer --> TMDB
+    DomainLayer --> Emby
+    DomainLayer --> P115
 ```
 
-### 服务层设计
+开发模式下没有 Caddy：Vite dev server 跑 3000 端口并把 `/api`、`/ws` 代理到后端 8000。
+
+### 分层与刮削协作
 
 ```mermaid
 graph LR
-    subgraph Orchestration["编排层"]
-        Scraper[ScraperService]
+    subgraph AppLayer["应用层 application"]
+        Scraper["scraping/service<br/>刮削编排"]
+        Jobs["manual_job / scrape_job / watcher / scheduler<br/>历史与日志用例"]
     end
 
-    subgraph Mixins["Mixin 模式"]
-        Config[ScraperConfigMixin<br/>配置管理]
-        Metadata[ScraperMetadataMixin<br/>元数据处理]
-        Media[ScraperMediaMixin<br/>媒体文件处理]
+    subgraph Collaborators["scraping 协作者（组合式）"]
+        Config["config_resolver<br/>配置检查"]
+        Metadata["metadata_resolver<br/>元数据 / NFO"]
+        Media["media_pipeline<br/>图片 / 字幕 / Emby"]
+        Writer["output_writer<br/>整理与重命名"]
+        Storage["p115_storage_provider<br/>115 输出适配"]
     end
 
-    subgraph CoreServices["核心服务"]
-        Parser[ParserService]
-        TMDB[TMDBService]
-        NFO[NFOService]
-        Image[ImageService]
-        Rename[RenameService]
-        Subtitle[SubtitleService]
-        P115[P115Service<br/>115 网盘适配]
+    subgraph DomainLayer["基础能力层 domain"]
+        Parsing["parsing 解析器"]
+        Artifacts["artifacts NFO / 重命名 / 图片 / 字幕"]
+        Integrations["integration Emby / 115"]
+        Identity["identity 认证 / 会话"]
+        System["system 配置 / 模板 / 日志"]
+        Media2["media 扫描 / 指纹"]
+    end
+
+    subgraph InfraLayer["数据层 infrastructure"]
+        Repos["repositories 仓储"]
+        DB[("SQLite + 连接池<br/>WAL")]
     end
 
     Scraper --> Config
     Scraper --> Metadata
     Scraper --> Media
-    Config --> Parser
-    Metadata --> TMDB
-    Metadata --> NFO
-    Media --> Image
-    Media --> Subtitle
-    Media --> Rename
-    Media --> P115
+    Scraper --> Writer
+    Scraper --> Storage
+    Scraper --> DomainLayer
+    Jobs --> DomainLayer
+    DomainLayer --> InfraLayer
+    AppLayer --> InfraLayer
+    Repos --> DB
 ```
 
 ---
@@ -162,83 +153,79 @@ graph LR
 ```mermaid
 flowchart TD
     Start([开始]) --> Scan[扫描文件夹]
-    Scan --> Filter{文件过滤}
-    Filter -->|通过| Parse[解析文件名]
-    Filter -->|过滤| Skip[跳过文件]
+    Scan --> Fingerprint[计算文件指纹]
+    Fingerprint --> Dedup{已刮削过?}
+    Dedup -->|跳过| Skip[跳过文件]
+    Dedup -->|新文件| Parse[解析文件名]
+    Parse --> Search[搜索 TMDB]
 
-    Parse --> Extract[提取剧名/季/集]
-    Extract --> Search[搜索 TMDB]
-    Search --> AI{已启用 AI?}
-    AI -->|是| Refine[清洗标题/检索别名/候选建议]
-    AI -->|否| Match{匹配结果}
-    Refine --> Match
-
-    Match -->|自动匹配| GetDetails[获取详情]
-    Match -->|需要选择| Manual[手动选择]
+    Search --> Match{匹配结果}
+    Match -->|自动匹配| Verify[核验季 / 集]
+    Match -->|需要选择| Conflict[处理冲突弹窗]
     Match -->|无结果| Failed[标记失败]
 
-    Manual --> GetDetails
-    GetDetails --> GenNFO[生成 NFO]
-    GenNFO --> Organize[文件整理]
+    Conflict --> Verify
+    Verify --> GenNFO[生成 NFO]
+    GenNFO --> Organize[整理文件]
 
     Organize --> Mode{整理模式}
-    Mode -->|复制| Copy[复制文件]
-    Mode -->|移动| Move[移动文件]
-    Mode -->|硬链接| HardLink[创建硬链接]
-    Mode -->|软链接| SymLink[创建软链接]
+    Mode -->|copy| Copy[复制]
+    Mode -->|move| Move[移动]
+    Mode -->|hardlink| HardLink[硬链接]
+    Mode -->|symlink| SymLink[软链接]
 
     Copy --> Download[下载图片]
     Move --> Download
     HardLink --> Download
     SymLink --> Download
 
-    Download --> Subtitle[处理字幕]
-    Subtitle --> Record[记录历史]
+    Download --> Subtitle[关联字幕]
+    Subtitle --> Record[登记产物 + 写历史]
     Record --> Success([完成])
 
     Failed --> Record
-    Skip --> End([结束])
+    Skip --> Next{还有文件?}
+    Next -->|有| Parse
+    Next -->|无| End([结束])
 ```
+
+任务整体受「任务超时」阈值约束（系统设置，下限 10 秒）。触发超时时记录 `status=timeout`，并落库最后执行到的步骤与当时的阈值快照，详情页单列「超时详情」。
 
 ### 文件名解析流程
 
 ```mermaid
 flowchart LR
-    Input[原始文件名] --> Clean[清理垃圾信息]
-    Clean --> Detect{检测格式}
-
-    Detect -->|S01E01| Standard[标准解析器]
-    Detect -->|第x集| Chinese[中文解析器]
-    Detect -->|第x話| Japanese[日文解析器]
-
-    Standard --> Extract[提取信息]
-    Chinese --> Extract
-    Japanese --> Extract
-
-    Extract --> Output[剧名 + 季号 + 集号]
+    Input[原始文件名] --> Clean["优先级 10<br/>清洗噪点"]
+    Clean --> Standard["优先级 20<br/>标准 S01E01"]
+    Standard --> Japanese["优先级 30<br/>日语 第x話"]
+    Japanese --> Chinese["优先级 40<br/>中文 第x集"]
+    Chinese --> Fallback["优先级 50<br/>剧名兜底"]
+    Fallback --> Output["剧名 + 季号 + 集号"]
 ```
+
+解析器按优先级串行尝试，命中即返回。解析出的季/集只作为预选默认值，用户在向导里的选择不会被覆盖；OVA/OAD/ONA/特別編 属于发行形态，不落成第 0 季。
 
 ### 任务队列流程
 
 ```mermaid
 sequenceDiagram
     participant User as 用户
-    participant API as API 层
+    participant API as 接入层
     participant Queue as 任务队列
     participant Worker as 工作进程
     participant WS as WebSocket
 
     User->>API: 创建刮削任务
-    API->>Queue: 添加到队列
-    API-->>User: 返回任务 ID
-
+    API->>Queue: 入队并返回任务 ID
+    API-->>User: 任务已创建
     Queue->>Worker: 分发任务
-    Worker->>WS: 推送进度
-    WS-->>User: 实时更新
-
-    Worker->>Worker: 执行刮削
-    Worker->>WS: 推送结果
-    WS-->>User: 显示结果
+    loop 每个文件
+        Worker->>WS: 推送进度与当前文件
+        WS-->>User: 实时更新
+    end
+    Worker->>Worker: 写历史记录与产物登记
+    Worker->>WS: 推送完成与统计
+    WS-->>User: 刷新列表
 ```
 
 ---
@@ -247,76 +234,54 @@ sequenceDiagram
 
 ```
 MHTI/
-├── 📂 server/                    # Python 后端
-│   ├── 📂 api/                   # API 路由层
-│   │   ├── auth.py               # 认证接口
-│   │   ├── files.py              # 文件操作
-│   │   ├── scraper.py            # 刮削接口
-│   │   ├── config.py             # 配置管理
-│   │   ├── tmdb.py               # TMDB 代理
-│   │   ├── watcher.py            # 文件监控
-│   │   └── websocket.py          # WebSocket
-│   ├── 📂 core/                  # 核心层
-│   │   ├── container.py          # 依赖注入容器
-│   │   ├── database.py           # 数据库连接
-│   │   ├── auth.py               # 认证逻辑
-│   │   ├── middleware.py         # 中间件
-│   │   └── 📂 db/                # 数据库模块
-│   │       ├── connection.py     # 连接池
-│   │       └── schema.py         # 表结构
-│   ├── 📂 services/              # 业务服务层
-│   │   ├── ai_provider_service.py # OpenAI 兼容 AI 服务
-│   │   ├── scraper_service.py    # 刮削编排器
-│   │   ├── tmdb_service.py       # TMDB 服务
-│   │   ├── parser_service.py     # 解析服务
-│   │   ├── nfo_service.py        # NFO 生成
-│   │   ├── image_service.py      # 图片下载
-│   │   ├── rename_service.py     # 文件整理
-│   │   ├── p115_service.py       # 115 网盘服务
-│   │   ├── watcher_service.py    # 文件监控（本地 + 115）
-│   │   ├── scheduler_service.py  # 定时任务
-│   │   └── 📂 parsers/           # 解析器集合
-│   │       ├── cleaner.py         # 发布标签、画质与副标题清洗
-│   │       ├── episode_standard.py
-│   │       ├── episode_chinese.py
-│   │       └── episode_japanese.py
-│   ├── 📂 models/                # 数据模型
-│   │   ├── scraper.py            # 刮削模型
-│   │   ├── tmdb.py               # TMDB 模型
-│   │   ├── file.py               # 文件模型
-│   │   ├── cloud_115.py          # 115 网盘模型
-│   │   ├── storage.py            # 存储定位模型
-│   │   └── ...
-│   └── 📂 tests/                 # 单元测试
-├── 📂 web/                       # Vue.js 前端
-│   ├── 📂 src/
-│   │   ├── 📂 api/               # API 客户端
-│   │   ├── 📂 views/             # 页面视图
-│   │   │   ├── HomePage.vue      # 首页
-│   │   │   ├── ScanPage.vue      # 手动任务
-│   │   │   ├── HistoryPage.vue   # 刮削记录
-│   │   │   ├── FilesPage.vue     # 文件管理
-│   │   │   └── SettingsPage.vue  # 设置页面
-│   │   ├── 📂 components/        # 组件库
-│   │   │   ├── 📂 common/        # 通用组件
-│   │   │   ├── 📂 layout/        # 布局组件
-│   │   │   ├── 📂 scan/          # 扫描组件
-│   │   │   ├── 📂 scrape/        # 刮削组件
-│   │   │   └── 📂 settings/      # 设置组件
-│   │   ├── 📂 stores/            # Pinia 状态
-│   │   │   ├── auth.ts           # 认证状态
-│   │   │   ├── scraper.ts        # 刮削状态
-│   │   │   └── theme.ts          # 主题状态
-│   │   ├── 📂 composables/       # 组合式函数
-│   │   ├── 📂 utils/             # 工具函数
-│   │   └── 📂 router/            # 路由配置
+├── server/                       # Python 后端（四层架构）
+│   ├── main.py                   # 应用入口（FastAPI 装配、路由挂载）
+│   ├── bootstrap.py              # 组合根：DI 容器与服务工厂
+│   ├── common/                   # 共享内核（异常体系、HTTP 工具）
+│   ├── api/                      # 接入层
+│   │   ├── deps.py               # 鉴权依赖
+│   │   ├── middleware.py         # 中间件与异常处理器
+│   │   └── v1/                   # 版本化路由（20 个模块，约 120 个端点）
+│   ├── application/              # 应用层（用例编排）
+│   │   ├── scraping/             # 刮削编排 + 协作者（配置/元数据/管线/输出/115）
+│   │   ├── manual_job_service.py # 手动任务队列
+│   │   ├── scrape_job_service.py # 刮削任务队列
+│   │   ├── watcher_service.py    # 目录监控
+│   │   ├── history_service.py    # 历史记录
+│   │   └── scheduler_service.py  # 定时任务
+│   ├── domain/                   # 基础能力层
+│   │   ├── parsing/              # 文件名解析（插件式 parsers/）
+│   │   ├── metadata/             # TMDB 元数据
+│   │   ├── artifacts/            # NFO / 重命名 / 图片 / 字幕
+│   │   ├── media/                # 文件扫描 / 指纹
+│   │   ├── integration/          # Emby / 115 网盘
+│   │   ├── identity/             # 认证 / 会话
+│   │   └── system/               # 配置 / 模板 / 日志
+│   ├── infrastructure/           # 数据层
+│   │   ├── db/                   # 连接池与表结构
+│   │   ├── repositories/         # 仓储（各表 DDL 与迁移就地维护）
+│   │   ├── realtime.py           # WebSocket 连接管理
+│   │   └── ...                   # 安全 / 缓存 / 日志落库 / 应用配置
+│   ├── models/                   # 领域模型（Pydantic）
+│   └── tests/                    # 测试（含分层架构断言）
+├── web/                          # Vue 3 前端
+│   ├── src/
+│   │   ├── config/               # 运行时配置
+│   │   ├── shared/               # 跨域共享：api / components / composables / styles / types / utils
+│   │   ├── layouts/              # 应用壳：顶部导航、命令面板、移动端 TabBar
+│   │   ├── router/               # 路由聚合（shell.ts）与菜单真源
+│   │   ├── stores/               # Pinia：认证 / 主题
+│   │   └── modules/              # 六业务域：auth / home / scrape / history / library / settings
+│   │       └── <域>/             # api.ts · routes.ts · components · hooks · views · types
 │   └── package.json
-├── 📂 data/                      # 数据目录
-│   └── scraper.db                # SQLite 数据库
-├── docker-compose.yml            # Docker 编排
-├── Dockerfile                    # 多阶段构建
-├── Caddyfile                     # Caddy 配置
-└── pyproject.toml                # Python 依赖
+├── data/                         # 运行时数据（SQLite、日志）
+├── Dockerfile                    # 多阶段构建（Node 构建前端 + Python 运行时 + Caddy）
+├── docker-compose.yml            # 容器编排
+├── Caddyfile                     # 反向代理与静态文件
+├── start.sh                      # 容器启动脚本（Caddy + uvicorn）
+├── run_server.py                 # 本机启动脚本
+├── requirements.txt              # 后端依赖（Docker 使用）
+└── pyproject.toml                # 项目元数据与开发依赖
 ```
 
 ---
@@ -330,13 +295,13 @@ MHTI/
 git clone https://github.com/sfgawrgarf/MHTI.git
 cd MHTI
 
-# 创建本地持久化、源媒体和整理输出目录
+# 创建持久化、源媒体和整理输出目录
 mkdir -p data media output
 
-# 默认固定为当前发布版；升级时先修改为目标版本号
+# 默认使用已发布的固定版本；升级时显式指定目标版本
 export MHTI_VERSION=2.1.6
 
-# 拉取已发布镜像并启动服务（Docker Compose v2）
+# 拉取固定版本镜像并启动服务（Docker Compose v2）
 docker compose pull
 docker compose up -d
 
@@ -348,7 +313,7 @@ docker compose logs -f mhti
 # API 文档: http://localhost:8000/api/docs
 ```
 
-如果系统仍使用旧版 Compose 命令，将上述 `docker compose` 替换为 `docker-compose` 即可。
+首次启动后打开首页，按引导完成 TMDB Token 配置即可开始刮削。
 
 ### Docker Compose 配置
 
@@ -359,130 +324,158 @@ services:
     container_name: mhti
     restart: unless-stopped
     ports:
-      - "8000:8000"    # 主入口
+      - "8000:8000"                   # 唯一对外入口（Caddy）
     volumes:
       - ./data:/app/data              # 数据持久化
       - ./media:/media:ro             # 源媒体（只读）
-      - ./output:/output              # 整理输出（可写）
+      - ./output:/output              # 整理输出
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
     environment:
-      - TZ=Asia/Shanghai
       - DATA_DIR=/app/data
+      - TZ=Asia/Shanghai
       - MHTI_ALLOWED_MEDIA_ROOTS=/media,/output
 ```
 
-生产环境可将 `./media` 和 `./output` 替换为宿主机绝对路径，例如 `/srv/media:/media:ro` 与 `/srv/mhti-output:/output`。文件监控、指纹读取、移动、重命名、字幕处理和图片写入只允许发生在 `MHTI_ALLOWED_MEDIA_ROOTS` 列出的容器内目录；使用 `/incoming`、`/library` 或其他自定义挂载时，需要把相应容器路径加入这个逗号分隔的变量。TMDB 图片默认只允许从 `image.tmdb.org` 下载，如确需其他可信图片域名，可通过 `MHTI_ALLOWED_IMAGE_HOSTS` 显式配置。不要把 API Key 写入 Compose 文件，请在网页“设置 → AI 识别”中保存。
-
-默认配置引用 GitHub Container Registry（GHCR）的当前稳定版 `2.1.6`，不会因新的 `latest` 镜像自动升级。升级前请先查看 Release，再在项目目录的 `.env` 写入目标版本，例如 `MHTI_VERSION=2.1.6`，然后执行 `docker compose pull && docker compose up -d`。如需回滚，只需将该值改回原版本并重新拉取启动。
-
-2.1.0 起，独立元数据目录也必须包含在 `MHTI_ALLOWED_MEDIA_ROOTS` 中。覆盖文件需要目标磁盘有足够空间暂存完整的新文件；准备或替换失败时保留原目标及源文件。字幕跟随视频整理模式，遇到同名目标不会自动覆盖。
-
-2.1.1 起，历史记录手动处理和重试会先加入后台队列，“已加入队列”不代表文件已处理完成，请在记录页查看最终结果。超时或取消会等待文件操作停止或完成收尾；已完成写入的文件不会自动回滚，重试前请核对日志和目标文件。
-
-2.1.2 起，手动任务和单文件刮削任务可以真正停止；手动任务页同时展示后台队列、实际运行任务、并发限制、最长等待时间及文件 I/O 状态。取消运行中任务会等待文件操作安全收尾，已经完成的文件写入不会自动回滚。
-
-2.1.4 统一自动与手动匹配的输出流程，修复任务状态、日志重试和 Emby 强制处理语义，并拆分冲突处理界面、清理不可达旧代码。升级时保留现有配置、任务和历史记录，无需清空数据或手动迁移。
-
-2.1.6 集中修复任务终态、115 与本地存储组合、Watcher 恢复与回滚、调度重试、会话并发及 WebSocket 生命周期问题，并让任务向导选项和运行时 API 地址真正生效。升级无需清空数据或手动迁移。
-
-当前开发中的 AI 辅助代码尚未发布时，使用本地构建覆盖文件测试：
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-```
-
-推送 `v*.*.*` 发布标签后，仓库的 Release 工作流会把包含 AI 辅助功能的镜像推送至 GHCR；其他用户即可拉取该版本。
+默认 Compose 文件使用 GHCR 固定版本镜像；源码开发或验证容器构建时，使用
+`docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`。
+容器内 Caddy 监听 8000，uvicorn 只监听 `127.0.0.1:8001`，前端静态文件由 Caddy 直接提供。
 
 ### 开发模式
 
 ```bash
-# 后端开发（方案 A：虚拟环境）
+# 后端（工作目录：项目根）
 python -m venv .venv
-# Windows
-.\.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
+.\.venv\Scripts\activate            # macOS / Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
-python run_server.py --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
 
-# 后端开发（方案 B：不使用虚拟环境）
-python -m pip install --target .local_packages -r requirements.txt
-python run_server.py --host 0.0.0.0 --port 8000 --reload
-
-# 前端开发
-cd web
+# 前端（工作目录：web/）
 npm install
-npm run dev
+npm run dev                         # http://127.0.0.1:3000，/api 与 /ws 代理到 8000
+
+# 前端提交前必跑：类型检查 + 构建
+npm run build:check
 ```
 
 说明：
 
-- 方案 A 使用当前激活的虚拟环境。
-- 方案 B 会把后端依赖安装到仓库根目录 `.local_packages/`，不需要创建或激活虚拟环境。
-- `run_server.py` 会优先使用当前 Python 环境；若当前环境缺依赖，再回退到 `.local_packages/`。
-- 为兼容早期说明，若仓库里已经存在 `.python_packages/`，启动脚本也会继续尝试它。
-- 若只需本机访问，后端可改用 `--host 127.0.0.1`。
+- `run_server.py` 会优先使用当前 Python 环境，缺依赖时回退到 `.local_packages/`（可用 `pip install --target .local_packages -r requirements.txt` 安装）。
+- 后端入口统一为 `server.main:app`；Docker 内由 `start.sh` 同时拉起 uvicorn 与 Caddy。
+- 本机直连 `api.themoviedb.org` 不通时，需带代理启动后端，否则刮削一律 502：
+
+```bash
+HTTP_PROXY=http://127.0.0.1:10808 HTTPS_PROXY=http://127.0.0.1:10808 \
+ALL_PROXY=http://127.0.0.1:10808 \
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8000
+```
 
 ---
 
 ## 🌐 API 端点
 
-### 认证模块 `/api/auth`
+所有接口以 `/api` 为前缀（WebSocket 为 `/ws`），文档见 `/api/docs`。除登录与健康检查外均需 JWT 认证。
+
+### 认证 `/api/auth`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/login` | 用户登录 |
-| POST | `/logout` | 用户登出 |
 | POST | `/register` | 注册账户 |
+| POST | `/login` | 登录，返回访问令牌与刷新令牌 |
 | POST | `/refresh` | 刷新令牌 |
+| POST | `/logout` | 登出 |
 | GET | `/status` | 认证状态 |
+| GET | `/verify` | 校验令牌 |
+| GET | `/profile` | 当前账户信息 |
+| GET | `/history` | 登录历史 |
+| GET/PUT/DELETE | `/avatar` | 头像读写 |
+| PUT | `/password` · `/username` | 修改密码 / 用户名 |
 | GET | `/sessions` | 会话列表 |
+| DELETE | `/sessions` · `/sessions/{id}` | 注销全部 / 指定会话 |
 
-### 文件模块 `/api/files`
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/scan` | 扫描文件夹 |
-| GET | `/browse` | 浏览目录 |
-
-### 刮削模块 `/api/scraper`
+### 配置 `/api/config`
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/scrape` | 执行刮削 |
-| POST | `/scrape-by-id` | 按 TMDB ID 刮削 |
+| GET/PUT/DELETE | `/proxy` | 代理设置 |
+| POST | `/proxy/test` | 代理连通性测试 |
+| GET/PUT | `/language` | 元数据语言 |
+| POST/GET/DELETE | `/api-token` · `/api-token/status` | TMDB Token 保存与状态 |
+| POST | `/api-token/verify` | 重新验证 Token 与 R18 可见性 |
+| GET/PUT | `/organize` | 整理模式与过滤规则 |
+| GET/PUT | `/download` | 下载范围（海报/背景/剧照/字幕） |
+| GET/PUT | `/naming` | 命名模板与重命名规则 |
+| GET/PUT | `/nfo` | NFO 字段与图片类型 |
+| GET/PUT | `/watcher-config` | 监控扫描方式与入库时机 |
+| GET/PUT | `/system` | 系统参数（并发、任务超时等） |
+| GET | `/frontend` | 前端运行时配置 |
+| GET | `/115` · `/115/account` · `/115/devices` | 115 登录状态 / 账号详情 / 设备列表 |
+| POST | `/115/login/qrcode` | 生成登录二维码 |
+| GET | `/115/login/status` | 扫码状态轮询 |
+| DELETE | `/115/login` | 退出登录 |
+
+### 文件与解析
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/scan` | 扫描文件夹 |
+| GET | `/api/files/browse` | 浏览目录（本地 / 115） |
+| POST | `/api/parse` · `/api/parse/batch` | 解析文件名（单个 / 批量） |
+
+### 刮削 `/api/scraper`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
 | GET | `/status` | 刮削状态 |
+| POST | `/preview` | 预演（不落盘） |
+| POST | `/file` · `/file/by-id` | 刮削单个文件（按路径 / 按 TMDB ID） |
+| POST | `/batch` | 批量刮削 |
 
-### 配置模块 `/api/config`
+### 任务
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET/PUT | `/tmdb` | TMDB 配置 |
-| GET/PUT/DELETE | `/ai/config` | AI 辅助识别配置 |
-| GET/PUT | `/proxy` | 代理设置 |
-| GET/PUT | `/organize` | 整理配置 |
-| GET/PUT | `/download` | 下载设置 |
-| GET/PUT | `/nfo` | NFO 设置 |
-| GET | `/115` | 115 登录状态 |
-| GET | `/115/devices` | 115 登录设备列表 |
-| POST | `/115/login/qrcode` | 115 扫码登录 |
-| GET | `/115/login/status` | 115 登录状态轮询 |
-| DELETE | `/115/login` | 115 退出登录 |
+| POST/GET/DELETE | `/api/manual-jobs` · `/api/manual-jobs/{id}` | 手动任务创建 / 列表 / 详情 / 清理 |
+| POST/GET/DELETE | `/api/scrape-jobs` · `/api/scrape-jobs/{id}` | 刮削任务创建 / 列表 / 详情 / 清理 |
+| GET/POST/PUT/DELETE | `/api/scheduler` · `/api/scheduler/{id}` | 定时任务增删改查 |
+| POST | `/api/scheduler/{id}/toggle` | 启用 / 停用定时任务 |
+| GET/POST | `/api/watcher/status` · `/start` · `/stop` | 监控开关与状态 |
+| GET/POST/PUT/DELETE | `/api/watcher/folders` · `/{id}` | 监控目录增删改查 |
 
-### 其他模块
+### 历史与产物
 
-| 路径 | 说明 |
-|------|------|
-| `/api/tmdb/*` | TMDB 代理接口 |
-| `/api/ai/recognize` | 单文件 AI 辅助识别预览 |
-| `/api/ai/versions/preview` | 媒体版本策略预览 |
-| `/api/ai/versions/record` | 记录成功整理的媒体版本 |
-| `/api/emby/*` | Emby 集成 |
-| `/api/watcher/*` | 文件夹监控（本地 + 115） |
-| `/api/history/*` | 历史记录 |
-| `/api/manual-jobs/*` | 手动任务管理 |
-| `/api/scheduler/*` | 定时任务 |
-| `/ws` | WebSocket 实时通信 |
-| `/health` | 健康检查 |
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET/POST/DELETE | `/api/history` | 记录列表 / 新建 / 批量删除 |
+| GET/DELETE | `/api/history/{id}` | 记录详情 / 删除 |
+| GET | `/api/history/{id}/logs/stream` | 刮削日志 SSE 实时流 |
+| GET | `/api/history/export` | 导出记录 |
+| POST | `/api/history/undo` | 撤销上一次操作 |
+| PUT | `/api/history/{id}/resolve` | 提交冲突处理结果 |
+| POST | `/api/history/{id}/retry` | 重试（沿用已存匹配） |
+| GET | `/api/history/{id}/files` | 记录关联的源文件与产物 |
+| POST | `/api/history/{id}/files/delete` | 删除产物文件 |
+| POST | `/api/history/{id}/reorganize` | 按记录重新整理 |
+| GET | `/api/tmdb/search` · `/series/{id}` · `/series/{id}/season/{n}` | TMDB 搜索 / 剧集详情 / 季详情 |
+| POST | `/api/images/download` · `/batch` | 图片下载 |
+| POST | `/api/nfo/tvshow` · `/season` · `/episode` | NFO 生成 |
+| POST | `/api/subtitles/scan` · `/associate` · `/rename` · `/rename/batch` | 字幕扫描 / 关联 / 重命名 |
+| POST | `/api/rename/preview` · `/execute` · `/batch` | 重命名预演与执行 |
+| GET/POST | `/api/templates/default` · `/preview` · `/validate` | 命名模板 |
+
+### 集成与运维
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET/PUT | `/api/emby/config` | Emby 配置 |
+| GET | `/api/emby/status` | Emby 连接状态 |
+| POST | `/api/emby/test` · `/check-conflict` | 连接测试 / 冲突检测 |
+| GET | `/api/logs` · `/stats` · `/loggers` | 日志查询 / 指标 / logger 列表 |
+| GET/PUT | `/api/logs/config` | 日志级别与保留策略 |
+| DELETE | `/api/logs` · POST `/api/logs/cleanup` | 清空 / 按策略清理 |
+| GET | `/api/logs/export` | 日志导出 |
+| WS | `/ws` | WebSocket 实时通道 |
+| GET | `/health` | 存活检查 |
+| GET | `/health/ready` | 就绪检查 |
 
 ---
 
@@ -490,13 +483,17 @@ npm run dev
 
 | 路径 | 页面 | 功能 |
 |------|------|------|
-| `/` | 首页 | 统计概览、快捷入口 |
-| `/login` | 登录 | 用户认证 |
-| `/scan` | 手动任务 | 创建刮削任务 |
-| `/history` | 刮削记录 | 查看历史记录 |
-| `/files` | 文件管理 | 浏览媒体文件 |
-| `/settings` | 设置 | 系统配置（含 115 网盘登录） |
-| `/security` | 安全设置 | 账户管理 |
+| `/` | 首页 | 统计概览、最近任务、TMDB 配置引导 |
+| `/scan` | 手动任务 | 向导式创建刮削任务、任务进度与结果 |
+| `/history` | 刮削记录 | 列表、筛选、多选批量重试、导出 |
+| `/history/:id` | 记录详情 | 元数据卡、刮削日志时间轴、超时详情、记录级操作 |
+| `/files` | 文件管理 | 目录浏览（本地 / 115）、发起整理任务 |
+| `/filemanager/scan` | 扫描结果 | 目录扫描结果与建任务入口（沿用遗留路径） |
+| `/settings` | 设置 | 左侧分组导航 + 右侧面板（整理/监控/下载/命名/NFO/代理/115/Emby/系统/日志） |
+| `/security` | 安全设置 | 账户、密码、会话与登录历史 |
+| `/login` | 登录 | 用户认证（全页路由，不套应用壳） |
+
+界面语言：中文。导航、命令面板（⌘K / Ctrl+K）与移动端底部 TabBar 均由路由 meta 驱动。
 
 ---
 
@@ -506,115 +503,179 @@ npm run dev
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| Python | 3.11+ | 运行时 |
+| Python | 3.12+ | 运行时 |
 | FastAPI | 0.109+ | Web 框架 |
 | Uvicorn | 0.27+ | ASGI 服务器 |
-| aiosqlite | 0.19+ | 异步 SQLite |
-| httpx | 0.27+ | HTTP 客户端 |
-| watchdog | 4.0+ | 文件监控 |
-| python-jose | 3.3+ | JWT 认证 |
 | Pydantic | 2.6+ | 数据验证 |
-| p115client | 0.0.9.6.5.1 | 115 网盘客户端 |
+| aiosqlite | 0.19+ | 异步 SQLite（手写 SQL + 仓储层） |
+| httpx[socks] | 0.27+ | HTTP 客户端（支持代理） |
+| watchdog | 4.0+ | 本地目录监控 |
+| croniter | 2.0+ | 定时任务表达式 |
+| sse-starlette | 2.0+ | 日志与进度 SSE |
+| PyJWT | 2.10+ | JWT 认证 |
+| cryptography | 49.0+ | 敏感配置加密 |
+| p115client | 0.0.9.6.5.1 | 115 网盘客户端（版本需与 requirements 严格对齐） |
 
 ### 前端
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| Vue | 3.5+ | 前端框架 |
-| TypeScript | 5.9+ | 类型系统 |
-| Vite | 7+ | 构建工具 |
-| Pinia | 3.0+ | 状态管理 |
-| Vue Router | 4.6+ | 路由管理 |
-| Naive UI | 2.43+ | UI 组件库 |
-| Axios | 1.13+ | HTTP 客户端 |
+| Vue | 3.5 | 前端框架 |
+| TypeScript | 5.9 | 类型系统 |
+| Vite | 7.2 | 构建工具（构建期 Node 24） |
+| Pinia | 3.0 | 状态管理 |
+| Vue Router | 4.6 | 路由管理 |
+| Naive UI | 2.43 | UI 组件库 |
+| Axios | 1.13 | HTTP 客户端 |
+| qrcode | 1.5 | 登录二维码生成 |
 
 ### 部署
 
 | 技术 | 用途 |
 |------|------|
-| Docker | 容器化 |
-| Caddy | 反向代理 |
-| SQLite | 数据存储 |
+| Docker（多阶段构建） | 容器化，Node 构建前端 + Python 运行时 |
+| Caddy | 反向代理、静态文件、gzip、WebSocket 长连接 |
+| SQLite（WAL） | 数据存储 |
 
 ---
 
 ## 📊 数据库设计
 
-### 核心表结构
+SQLite 单文件（`data/scraper.db`，WAL 模式，连接池 5），共 14 张表。表结构与增量列由各自仓储就地维护。
 
 ```mermaid
 erDiagram
     config {
-        string key PK
+        int id PK
+        string key UK
         text value
-        datetime updated_at
+        int encrypted
+    }
+
+    auth_config {
+        int id PK
+        string key UK
+        text value
+        int encrypted
     }
 
     admin {
         int id PK
         string username UK
         string password_hash
-        datetime created_at
+        string avatar
     }
 
     sessions {
         string id PK
         int user_id FK
-        string token
+        string refresh_token_hash
+        string device_name
+        string device_type
+        string ip_address
         datetime expires_at
-        datetime created_at
     }
 
-    history_records {
-        string id PK
-        string file_path
-        string status
-        string tmdb_id
-        json details
-        datetime created_at
+    login_history {
+        int id PK
+        string username
+        string ip_address
+        int success
+        string failure_reason
+        string session_id
     }
 
-    scraped_files {
-        string id PK
-        string source_path
-        string target_path
-        int file_size
-        int tmdb_id
-        int season
-        int episode
-        datetime scraped_at
+    login_attempts {
+        int id PK
+        string client_ip UK
+        int attempts
     }
 
     manual_jobs {
         int id PK
-        string name
-        string source_dir
-        string output_dir
+        string scan_path
+        string target_folder
+        int link_mode
         string status
-        datetime created_at
+        int total_count
     }
 
     scrape_jobs {
         string id PK
         string file_path
-        string status
+        string output_dir
         int source_id FK
-        datetime created_at
+        string status
+        string history_record_id FK
+    }
+
+    history_records {
+        string id PK
+        int display_id
+        string task_name
+        string folder_path
+        string status
+        string file_fingerprint
+        int tmdb_id
+        int season_number
+        int episode_number
+        string timeout_step
+        int timeout_seconds
+    }
+
+    scraped_files {
+        string id PK
+        string source_path UK
+        string target_path
+        int file_size
+        int tmdb_id
+        int season
+        int episode
+        string history_record_id FK
+    }
+
+    scheduled_tasks {
+        string id PK
+        string name
+        string folder_path
+        string cron_expression
+        int enabled
     }
 
     watched_folders {
+        string id PK
+        string path UK
+        int enabled
+        string mode
+        int scan_interval_seconds
+        string provider
+        string file_id
+    }
+
+    logs {
         int id PK
-        string path
-        string output_dir
-        bool enabled
-        datetime created_at
+        datetime timestamp
+        string level
+        string logger
+        string message
+        string request_id
+    }
+
+    log_config {
+        int id PK
+        string log_level
+        int file_enabled
+        int db_enabled
+        int db_retention_days
     }
 
     admin ||--o{ sessions : has
     manual_jobs ||--o{ scrape_jobs : contains
     scrape_jobs ||--o| history_records : creates
-    history_records ||--o| scraped_files : records
+    history_records ||--o{ scraped_files : records
 ```
+
+`scraped_files` 记录整理产物的源路径与目标路径，供「删除文件 / 重新整理 / 重刮」定位；是否重复刮削由 `history_records.file_fingerprint` 判定。
 
 ---
 
@@ -622,73 +683,53 @@ erDiagram
 
 ### 整理模式
 
-| 模式 | 说明 | 适用场景 |
-|------|------|---------|
-| `copy` | 复制文件 | 保留原文件 |
-| `move` | 移动文件 | 节省空间 |
-| `hardlink` | 硬链接 | 同分区节省空间（仅本地） |
-| `symlink` | 软链接 | 跨分区引用（仅本地） |
+| 模式 | 值 | 说明 | 适用场景 |
+|------|----|------|---------|
+| 复制 | `copy` | 复制文件 | 保留原文件 |
+| 移动 | `move` | 移动文件 | 节省空间 |
+| 硬链接 | `hardlink` | 创建硬链接 | 同分区节省空间（仅本地） |
+| 软链接 | `symlink` | 创建软链接 | 跨分区引用（仅本地） |
 
 ### 115 网盘支持
 
 | 功能 | 说明 |
 |------|------|
-| 扫码登录 | 在设置页扫码登录 115 网盘，cookies 加密存储 |
-| 文件浏览 | 浏览 115 网盘目录，选择源/目标目录 |
-| 115→115 整理 | 视频在 115 内整理（复制/移动+改名），NFO/图片留本地 |
+| 扫码登录 | 设置页生成二维码，cookies 加密存储 |
+| 账号信息 | 展示身份、会员等级与到期时间、容量占用、当前登录设备 |
+| 文件浏览 | 浏览 115 目录并选择源/目标目录，含目录缓存与悬停预取 |
+| 115→115 整理 | 视频在 115 内复制/移动并改名，NFO 与图片留本地 |
 | 115→本地整理 | 从 115 下载视频到本地后整理 |
 | 监控模式 | 兼容模式（全量轮询）/ 事件模式（生活事件 API 增量监控） |
-| TMDB 核验 | 整理前核验 TMDB 中季/集存在性，避免错误重命名 |
-
-### 本地 `.strm` 与日文动画
-
-将本地媒体目录挂载到容器内的 `/media`，将整理结果挂载到 `/output`。`.strm` 与常见视频文件会一并参与扫描；推荐使用 `copy` 模式，以保留原始 `.strm` 文件和原有目录结构。
-
-日文动画文件名会先清理字幕组、制作组、日期、分辨率、语言及编码标签，再识别剧名与集数。支持的常见格式包括：
-
-- `第N話`、`第N章`、`#N`、`Vol.N`；
-- `N突き目`、`上巻`、`下巻`、前/后篇；
-- `OVA日文标题`（按常见 TMDB 第一季结构处理）；
-- `标题 1［副标题］` 这类全角方括号副标题格式。
-
-解析结果仍会由 TMDB 的季/集信息核验；无法安全确定时会保留为待人工确认，而不是写入不确定的元数据。
-
-### AI 辅助识别与多版本管理
-
-在“设置 → AI 识别”中填写 OpenAI 兼容接口地址、模型和 API Key 后，AI 会在正常刮削中参与以下步骤：
-
-1. 根据原始文件名和解析结果生成干净标题及 1–4 个 TMDB 检索别名；
-2. 在 TMDB 候选中给出标题、季、集与候选建议；
-3. 仅在达到配置的置信度阈值且通过 TMDB 季集核验时自动采用；低置信度结果保留人工选择。
-
-AI 只提供结构化识别建议，不会自行删除、覆盖或移动源媒体。已成功整理的源文件会记录逻辑媒体身份与版本信息，监控任务会跳过同一源文件的重复投递。
-
-若要从头重新刮削某一批文件，请先在网页删除对应记录；如果输出目录中已有同名整理结果，还需按需要清理该批输出文件，避免目标文件冲突。源目录保持只读时不会受影响。
+| 限流提示 | `fs_files` 请求过密会返回 405，前端提示稍后重试 |
 
 ### 环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `DATA_DIR` | `/app/data` | 数据目录 |
+| `DATA_DIR` | `/app/data` | 数据目录（SQLite 与日志） |
 | `TZ` | `Asia/Shanghai` | 时区 |
+| `APP_VERSION` | 代码内置版本 | 覆盖前端运行时展示的版本号 |
+
+其余配置（TMDB Token、代理、整理与命名规则、监控、Emby、日志级别等）均在设置页维护，落库于 `config` / `log_config` 表。
 
 ---
 
 ## 🧪 测试
 
 ```bash
-# 安装运行与测试依赖（开发环境）
-python -m pip install -r requirements.txt pytest pytest-cov
+# 全量后端测试（工作目录：项目根）
+python -m pytest server/tests -q        # 基线：530 passed
 
-# 运行所有测试
-python -m pytest
-
-# 运行覆盖率测试
+# 覆盖率
 python -m pytest --cov=server --cov-report=html
 
-# 运行特定测试
-python -m pytest server/tests/services/test_parser_service.py -v
+# 单个文件
+python -m pytest server/tests/domain/test_parser_service.py -v
 ```
+
+测试使用临时库隔离，不受 `data/scraper.db` 当前内容影响。测试目录含 `test_architecture.py`，对分层依赖方向做断言。
+
+前端暂无自动化测试，改动以 `npm run build:check`（`vue-tsc -b && vite build`）为硬门禁，并在浏览器中实测。
 
 ---
 
@@ -696,9 +737,13 @@ python -m pytest server/tests/services/test_parser_service.py -v
 
 ### 代码风格
 
-- **Python**: Ruff + Black (line-length=100)
-- **TypeScript**: ESLint + Prettier
-- **类型注解**: 严格模式
+- **Python**: Ruff + Black（line-length=100）
+- **TypeScript**: ESLint + Prettier，严格类型
+- **Vue**: `<script setup>` 单文件组件，样式使用设计令牌（`shared/styles/design-tokens.css`）
+
+### 前端分层
+
+依赖只能同层或向下：`Views → Modules → Components → Utils/Hooks/Config → Api`。跨业务域调用只允许走对方 `index.ts` 白名单或全局 Pinia，禁止跨域深路径导入；端点字符串只出现在 `api.ts` 与 `shared/api/*`。
 
 ### 命名约定
 

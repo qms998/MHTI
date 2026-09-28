@@ -4,9 +4,8 @@ import App from './App.vue'
 import router from './router'
 import { useThemeStore } from './stores/theme'
 import { useAuthStore } from './stores/auth'
-import { initializeApiBaseUrl } from './api'
-import './style.css'
-import './styles/ios-theme.css'
+import './shared/styles/design-tokens.css'
+import './shared/styles/global.css'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -18,12 +17,10 @@ app.use(router)
 const themeStore = useThemeStore()
 themeStore.initTheme()
 
-async function bootstrap() {
-  await initializeApiBaseUrl()
-  const authStore = useAuthStore()
-  await authStore.checkAuth()
-  await router.isReady()
-  app.mount('#app')
-}
-
-void bootstrap()
+// 初始化认证状态后再挂载应用
+const authStore = useAuthStore()
+authStore.checkAuth().then(() => {
+  router.isReady().then(() => {
+    app.mount('#app')
+  })
+})

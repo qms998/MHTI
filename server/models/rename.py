@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from server.models.organize import OrganizeMode
 from server.models.template import NamingTemplate
@@ -40,13 +40,13 @@ class RenamePreview(BaseModel):
     dest_path: str
     dest_folder: str
     new_filename: str
-    will_create_dirs: list[str] = Field(default_factory=list)
+    will_create_dirs: list[str] = []
 
 
 class BatchRenameRequest(BaseModel):
     """Batch rename request."""
 
-    items: list[RenameRequest] = Field(default_factory=list, max_length=100)
+    items: list[RenameRequest]
     create_backup: bool = False
     dry_run: bool = False
 

@@ -4,11 +4,12 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+
 P115_VIRTUAL_ROOT_PATH = "/115网盘"
 
 
 def is_p115_virtual_path(path: str) -> bool:
-    """Return whether ``path`` is the 115 virtual root or one of its children."""
+    """Return whether a path belongs to the provider-only 115 namespace."""
     normalized = path.rstrip("/")
     return normalized == P115_VIRTUAL_ROOT_PATH or normalized.startswith(
         f"{P115_VIRTUAL_ROOT_PATH}/"
@@ -33,7 +34,7 @@ class StorageLocator(BaseModel):
 
 
 def validate_locator_namespace(locator: StorageLocator) -> None:
-    """Ensure the declared provider agrees with the locator path namespace."""
+    """Ensure a locator path belongs to the namespace of its provider."""
     path_is_p115 = is_p115_virtual_path(locator.path)
     if locator.provider == StorageProvider.P115 and not path_is_p115:
         raise ValueError("115 存储定位必须使用 /115网盘 路径")
@@ -47,12 +48,7 @@ def infer_directory_locator(
     *,
     allow_file: bool = False,
 ) -> StorageLocator | None:
-    """Return a provider-aware directory locator for a configured path.
-
-    API clients are allowed to submit a plain local path.  Normalizing it here
-    keeps provider decisions consistent and avoids treating a 115 virtual path
-    as a local filesystem destination later in the worker.
-    """
+    """Normalize a user-selected directory into a provider-aware locator."""
     if locator is not None:
         if not locator.path.strip():
             raise ValueError("存储定位路径不能为空")
@@ -76,7 +72,7 @@ def normalize_file_locator(
     path: str,
     locator: StorageLocator | None,
 ) -> StorageLocator | None:
-    """Validate a source-file locator and drop redundant local locators."""
+    """Validate a source-file locator and omit redundant local locators."""
     if locator is None:
         return None
     if not locator.path.strip():
@@ -144,7 +140,11 @@ def validate_storage_capabilities(
         )
     )
 
-    if metadata_locator and metadata_locator.provider != StorageProvider.LOCAL:
+    if metadata_locator and metadata_locator.provider != StorageProvider.LOCAL and not (
+        source_provider == StorageProvider.P115
+        and target_provider == StorageProvider.P115
+        and allow_local_output
+    ):
         raise ValueError("元数据目录仅支持本地媒体目录")
 
     if source_provider == StorageProvider.P115 and source_locator is None:
@@ -166,10 +166,7 @@ def validate_storage_capabilities(
         else getattr(organize_mode, "value", organize_mode)
     )
     supported_provider_modes = {"copy", "move", 2, 3}
-    if (
-        source_provider == StorageProvider.P115
-        and mode_value not in supported_provider_modes
-    ):
+    if source_provider == StorageProvider.P115 and mode_value not in supported_provider_modes:
         raise ValueError("115 源文件仅支持复制或移动整理模式")
 
     if (

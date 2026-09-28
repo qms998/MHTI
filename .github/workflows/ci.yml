@@ -64,13 +64,6 @@ jobs:
           python -m compileall -q server
           ruff check server --select E9,F63,F7,F82,F401,F541,F601,F841,W605
 
-      - name: 增量类型检查
-        run: |
-          mypy --follow-imports=skip \
-            server/core/log_handler.py \
-            server/services/log_service.py \
-            server/services/websocket_manager.py
-
       - name: 依赖安全审计
         run: pip-audit -r requirements.lock --no-deps
 

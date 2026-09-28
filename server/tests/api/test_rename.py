@@ -6,9 +6,9 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from server.main import app
-from server.core.container import get_rename_service
-from server.services.rename_service import RenameService
-from server.services.template_service import TemplateService
+from server.bootstrap import get_rename_service
+from server.domain.artifacts.rename_service import RenameService
+from server.domain.system.template_service import TemplateService
 
 
 @pytest.fixture

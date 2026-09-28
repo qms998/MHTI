@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from fastapi import HTTPException
 
-from server.api import config as config_api
+from server.api.v1 import config as config_api
 from server.models.watcher import (
     WatchedFolder,
     WatcherConfig,

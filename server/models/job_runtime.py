@@ -1,4 +1,4 @@
-"""Runtime queue and worker observability models."""
+"""后台任务队列与文件 I/O 的运行时观测模型。"""
 
 from datetime import datetime
 
@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 
 class QueueRuntimeMetrics(BaseModel):
-    """Persisted and in-memory state for one job queue."""
+    """一个任务队列的持久化和内存状态。"""
 
     status_counts: dict[str, int] = Field(default_factory=dict)
     queued_in_memory: int = 0
@@ -18,7 +18,7 @@ class QueueRuntimeMetrics(BaseModel):
 
 
 class FileIORuntimeMetrics(BaseModel):
-    """Current use of the bounded local filesystem executor."""
+    """本地文件 I/O 执行器的当前占用。"""
 
     workers: int = 2
     active: int = 0
@@ -26,7 +26,7 @@ class FileIORuntimeMetrics(BaseModel):
 
 
 class JobRuntimeMetrics(BaseModel):
-    """Combined runtime view returned to the administration UI."""
+    """管理端展示的合并运行时视图。"""
 
     generated_at: datetime
     manual: QueueRuntimeMetrics

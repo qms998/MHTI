@@ -147,8 +147,11 @@ jobs:
               "server/__init__.py": matched("server/__init__.py", r'__version__\s*=\s*["\']([^"\']+)["\']'),
               "web/package.json": json.loads((root / "web/package.json").read_text(encoding="utf-8"))["version"],
               "Dockerfile": matched("Dockerfile", r'org\.opencontainers\.image\.version=["\']([^"\']+)["\']'),
-              "docker-compose.yml": matched("docker-compose.yml", r'MHTI_VERSION:-([^}]+)'),
           }
+
+          # docker-compose.yml intentionally defaults to the last published
+          # stable image for safe upgrades from an existing installation. It
+          # is not the unreleased source version on this migration branch.
 
           mismatches = {path: value for path, value in declared_versions.items() if value != version}
           if mismatches:
@@ -365,10 +368,7 @@ jobs:
           #### 从 GitHub Container Registry 拉取（推荐）
 
           ```bash
-          # 拉取最新版本
-          docker pull {docker_image}:latest
-
-          # 拉取指定版本
+          # 使用不可变的版本标签
           docker pull {docker_image}:{version}
 
           # 运行容器
@@ -377,6 +377,8 @@ jobs:
             -p 8000:8000 \\
             -v ./data:/app/data \\
             -v /path/to/media:/media:ro \\
+            -v /path/to/output:/output \\
+            -e MHTI_ALLOWED_MEDIA_ROOTS=/media,/output \\
             -e TZ=Asia/Shanghai \\
             {docker_image}:{version}
           ```

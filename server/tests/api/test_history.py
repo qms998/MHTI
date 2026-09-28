@@ -7,15 +7,15 @@ import aiosqlite
 import pytest
 from fastapi import HTTPException
 
-from server.api import history as history_api
-from server.core.db import configure_connection, create_all_tables
-from server.models.history import ConflictType, HistoryRecordCreate, TaskStatus
+from server.api.v1 import history as history_api
+from server.infrastructure.db import configure_connection, create_all_tables
+from server.models.history import HistoryConflictType as ConflictType, HistoryRecordCreate, TaskStatus
 from server.models.organize import OrganizeMode
 from server.models.scrape_job import ScrapeJobSource
 from server.models.scraper import ScrapeByIdRequest, ScrapeResult, ScrapeStatus
 from server.models.storage import StorageLocator, StorageProvider
-from server.services import scrape_job_service as scrape_job_service_module
-from server.services.history_service import HistoryService
+from server.application import scrape_job_service as scrape_job_service_module
+from server.application.history_service import HistoryService
 
 
 @pytest.mark.asyncio
@@ -412,7 +412,7 @@ async def test_delete_record_keeps_linked_scrape_job_readable(temp_db):
     assert await service.delete_record("history-pending") is True
 
     from server.models.scrape_job import ScrapeJobStatus
-    from server.services.scrape_job_service import ScrapeJobService
+    from server.application.scrape_job_service import ScrapeJobService
 
     job = await ScrapeJobService(db_path=temp_db).get_job("job-pending")
     assert job is not None
@@ -673,7 +673,7 @@ async def test_success_rematch_queues_replacement_without_replacing_original(mon
     history_service = AsyncMock()
     history_service.get_record.return_value = record
 
-    monkeypatch.setattr("server.services.scrape_job_service.ScrapeJobService", lambda: jobs)
+    monkeypatch.setattr("server.application.scrape_job_service.ScrapeJobService", lambda: jobs)
 
     result = await history_api.rematch_successful_record(
         "history-old",
@@ -724,7 +724,7 @@ async def test_manual_match_is_queued_without_synchronous_execution(monkeypatch)
             )
         )
     )
-    monkeypatch.setattr("server.core.container.get_scraper_service", lambda: scraper)
+    monkeypatch.setattr("server.bootstrap.get_scraper_service", lambda: scraper)
     record = SimpleNamespace(
         scrape_logs=[],
         manual_job_id=None,
@@ -735,7 +735,7 @@ async def test_manual_match_is_queued_without_synchronous_execution(monkeypatch)
     history_service.get_record.return_value = record
     history_service.clear_log_cache = Mock()
     queue = SimpleNamespace(create_job=AsyncMock(return_value=SimpleNamespace(id="queued-job")))
-    monkeypatch.setattr("server.services.scrape_job_service.ScrapeJobService", lambda **kwargs: queue)
+    monkeypatch.setattr("server.application.scrape_job_service.ScrapeJobService", lambda **kwargs: queue)
     request = ScrapeByIdRequest(
         file_path="/incoming/example.strm",
         tmdb_id=123,
@@ -789,7 +789,7 @@ async def test_manual_match_preserves_selection_in_queued_job(monkeypatch):
             )
         )
     )
-    monkeypatch.setattr("server.core.container.get_scraper_service", lambda: scraper)
+    monkeypatch.setattr("server.bootstrap.get_scraper_service", lambda: scraper)
     record = SimpleNamespace(
         scrape_logs=[],
         manual_job_id=None,
@@ -801,7 +801,7 @@ async def test_manual_match_preserves_selection_in_queued_job(monkeypatch):
     history_service.get_record.return_value = record
     history_service.clear_log_cache = Mock()
     queue = SimpleNamespace(create_job=AsyncMock(return_value=SimpleNamespace(id="queued-job")))
-    monkeypatch.setattr("server.services.scrape_job_service.ScrapeJobService", lambda **kwargs: queue)
+    monkeypatch.setattr("server.application.scrape_job_service.ScrapeJobService", lambda **kwargs: queue)
     request = ScrapeByIdRequest(
         file_path=record.folder_path,
         tmdb_id=97995,

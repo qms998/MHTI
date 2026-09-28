@@ -10,10 +10,10 @@ from starlette.requests import Request
 from starlette.websockets import WebSocketDisconnect
 
 from server import __version__
-from server.api.history import AIRetryRequest
-from server.core import security as security_module
-from server.core.auth import AuthContext, authenticate_access_token, get_client_ip
-from server.core.path_security import (
+from server.api import deps
+from server.api.deps import AuthContext, authenticate_access_token, get_client_ip
+from server.api.v1.history import AIRetryRequest
+from server.common.path_security import (
     PathSecurityError,
     validate_image_url,
     validate_media_path,
@@ -24,6 +24,7 @@ from server.models.manual_job import ManualJobDeleteRequest
 from server.models.parser import BatchParseRequest, ParseRequest
 from server.models.scraper import BatchScrapeRequest
 from server.models.subtitle import SubtitleRenameRequest
+from server.infrastructure import security as security_module
 
 
 def test_file_operation_routes_require_authentication(client: TestClient) -> None:
@@ -61,12 +62,17 @@ def test_frontend_config_remains_public_and_reports_release_version(
 async def test_access_token_requires_active_session(monkeypatch: pytest.MonkeyPatch) -> None:
     """A valid JWT is rejected immediately after its session is revoked."""
     monkeypatch.setattr(
-        "server.core.auth.auth_service.verify_token",
-        lambda _token: ("admin", "revoked-session"),
+        deps,
+        "_get_verifier",
+        lambda: type(
+            "Verifier",
+            (),
+            {"verify_token": lambda self, _token: ("admin", "revoked-session")},
+        )(),
     )
     active_check = AsyncMock(return_value=None)
     monkeypatch.setattr(
-        "server.core.auth.session_service.get_active_session_username",
+        "server.domain.identity.session_service.session_service.get_active_session_username",
         active_check,
     )
 
@@ -78,11 +84,16 @@ async def test_access_token_requires_active_session(monkeypatch: pytest.MonkeyPa
 async def test_access_token_uses_current_username_after_rename(monkeypatch) -> None:
     """A rename keeps the current session valid without trusting a stale JWT subject."""
     monkeypatch.setattr(
-        "server.core.auth.auth_service.verify_token",
-        lambda _token: ("old-name", "active-session"),
+        deps,
+        "_get_verifier",
+        lambda: type(
+            "Verifier",
+            (),
+            {"verify_token": lambda self, _token: ("old-name", "active-session")},
+        )(),
     )
     monkeypatch.setattr(
-        "server.core.auth.session_service.get_active_session_username",
+        "server.domain.identity.session_service.session_service.get_active_session_username",
         AsyncMock(return_value="new-name"),
     )
 
@@ -109,12 +120,11 @@ def test_websocket_accepts_active_session(
     """An authenticated socket receives its connection acknowledgement."""
     auth_check = AsyncMock(return_value=AuthContext("admin", "session-1"))
     monkeypatch.setattr(
-        "server.api.websocket.authenticate_access_token",
+        "server.api.v1.websocket.authenticate_access_token",
         auth_check,
     )
 
-    with client.websocket_connect("/ws") as websocket:
-        websocket.send_json({"type": "auth", "token": "valid-token"})
+    with client.websocket_connect("/ws?token=valid-token") as websocket:
         message = websocket.receive_json()
         assert message["type"] == "connected"
     auth_check.assert_awaited_once_with("valid-token")
@@ -126,13 +136,12 @@ def test_websocket_rejects_oversized_auth_token_before_verification(
 ) -> None:
     auth_check = AsyncMock()
     monkeypatch.setattr(
-        "server.api.websocket.authenticate_access_token",
+        "server.api.v1.websocket.authenticate_access_token",
         auth_check,
     )
 
     with pytest.raises(WebSocketDisconnect) as exc_info:
-        with client.websocket_connect("/ws") as websocket:
-            websocket.send_json({"type": "auth", "token": "x" * 4097})
+        with client.websocket_connect(f"/ws?token={'x' * 4097}") as websocket:
             websocket.receive_json()
 
     assert exc_info.value.code == 4401

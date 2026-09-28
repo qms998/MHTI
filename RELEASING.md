@@ -43,7 +43,13 @@ git push origin v1.0.0
 1. ✅ 构建前端 (Vue.js)
 2. ✅ 构建 Docker 多架构镜像 (amd64, arm64)
 3. ✅ 推送到 GitHub Container Registry（`ghcr.io/sfgawrgarf/mhti:latest` 和版本标签）
-4. ✅ 创建 GitHub Release
+4. ✅ 打包前端和源代码，并生成校验和
+5. ✅ 创建 GitHub Release
+
+工作流不会生成或上传 AMD64/ARM64 Docker 离线镜像大包；多架构镜像只保留在 GHCR。
+
+当前迁移分支的 Compose 默认值继续指向已发布稳定版 `2.1.6`，用于保护现有部署的可回滚性。
+正式发布新版本前，需要在同一个版本变更中更新源码版本和 Compose 默认版本；本次迁移不创建 Tag 或 Release。
 
 ### 3. 手动触发发布
 
@@ -88,4 +94,4 @@ git push origin v1.0.0
 - [ ] 文档已更新
 - [ ] CHANGELOG 已更新（如有）
 - [ ] 版本号符合语义化规范
-- [ ] Secrets 已正确配置
+- [ ] GitHub Actions 的 `packages: write` 权限可用

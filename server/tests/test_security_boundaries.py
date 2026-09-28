@@ -4,15 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from server.core.log_security import safe_log_value
-from server.core.path_security import (
+from server.infrastructure.log_security import safe_log_value
+from server.common.path_security import (
     PathSecurityError,
     validate_image_url,
     validate_media_directory,
     validate_media_path,
 )
-from server.services.media_identity_service import MediaIdentityService
-from server.services.tmdb_service import TMDBService
+from server.application.media_identity_service import MediaIdentityService
+from server.domain.metadata.tmdb_service import TMDBService
 
 
 def test_log_values_cannot_create_additional_records() -> None:

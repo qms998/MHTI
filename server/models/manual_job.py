@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
+from string import Formatter
 
 from pydantic import BaseModel, Field, model_validator
 from server.models.storage import (
@@ -11,6 +12,7 @@ from server.models.storage import (
     normalize_file_locator,
     validate_storage_capabilities,
 )
+from server.models.template import NamingTemplate
 
 
 class ManualJobStatus(str, Enum):
@@ -129,7 +131,7 @@ class ManualJobCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_storage_selection(self) -> "ManualJobCreate":
-        """Normalize plain paths and reject unsupported provider combinations."""
+        """Normalize provider paths before the job reaches the worker."""
         self._validate_advanced_settings()
         if (
             not self.metadata_dir.strip()
@@ -137,9 +139,8 @@ class ManualJobCreate(BaseModel):
             and not self.advanced_settings.use_global_organize
             and self.advanced_settings.metadata_folder.strip()
         ):
-            # Preserve old saved task settings without keeping two competing
-            # metadata-directory controls in the UI.
             self.metadata_dir = self.advanced_settings.metadata_folder.strip()
+
         self.scan_locator = infer_directory_locator(
             self.scan_path, self.scan_locator, allow_file=True
         )
@@ -153,6 +154,7 @@ class ManualJobCreate(BaseModel):
         self.metadata_locator = infer_directory_locator(
             self.metadata_dir or None, self.metadata_locator
         )
+
         if (
             is_p115_to_local(
                 source_path=self.scan_path,
@@ -175,7 +177,7 @@ class ManualJobCreate(BaseModel):
         return self
 
     def _validate_advanced_settings(self) -> None:
-        """Reject settings that the runtime cannot honor safely."""
+        """Reject settings that the runtime cannot silently ignore."""
         settings = self.advanced_settings
         if settings is None:
             return
@@ -206,24 +208,22 @@ class ManualJobCreate(BaseModel):
             )
 
         if not settings.use_global_organize and settings.scan_filters_enabled:
-            from server.core.media_extensions import (
-                is_valid_video_extension,
-                normalize_video_extensions,
-            )
-
-            extensions = normalize_video_extensions(
-                settings.file_ext_whitelist + settings.extra_ext_whitelist
-            )
-            if any(
-                not is_valid_video_extension(extension)
-                for extension in extensions
-            ):
+            extensions = {
+                extension.strip().lower().lstrip(".")
+                for extension in (
+                    settings.file_ext_whitelist + settings.extra_ext_whitelist
+                )
+                if extension.strip()
+            }
+            valid_extensions = {
+                "mp4", "mkv", "avi", "wmv", "mov", "flv", "rmvb", "ts",
+                "m2ts", "bdmv", "webm", "3gp", "mpg", "mpeg", "vob", "iso",
+                "m4v", "strm",
+            }
+            if any(extension not in valid_extensions for extension in extensions):
                 raise ValueError("文件扩展名格式无效")
 
         if not settings.use_global_naming:
-            from server.models.template import NamingTemplate
-            from server.services.template_service import TemplateService
-
             defaults = NamingTemplate()
             templates = {
                 "剧集文件夹": settings.series_folder_template.strip()
@@ -233,11 +233,42 @@ class ManualJobCreate(BaseModel):
                 "剧集文件": settings.episode_file_template.strip()
                 or defaults.episode_file,
             }
-            validator = TemplateService()
+            allowed_fields = {
+                "title",
+                "original_title",
+                "year",
+                "season",
+                "episode",
+                "episode_title",
+                "air_date",
+            }
+            sample_data = {
+                "title": "示例",
+                "original_title": "Example",
+                "year": 2024,
+                "season": 1,
+                "episode": 1,
+                "episode_title": "第一集",
+                "air_date": "2024-01-01",
+            }
             for label, template in templates.items():
-                result = validator.validate_template(template)
-                if not result.valid:
-                    raise ValueError(f"{label}模板无效: {result.error}")
+                try:
+                    fields = {
+                        field_name
+                        for _, field_name, _, _ in Formatter().parse(template)
+                        if field_name
+                    }
+                except ValueError as exc:
+                    raise ValueError(f"{label}模板无效: {exc}") from exc
+                unknown = fields - allowed_fields
+                if unknown:
+                    raise ValueError(
+                        f"{label}模板无效: 包含不支持的字段 {', '.join(sorted(unknown))}"
+                    )
+                try:
+                    template.format(**sample_data)
+                except (KeyError, IndexError, ValueError) as exc:
+                    raise ValueError(f"{label}模板无效: {exc}") from exc
 
 
 class ManualJobListResponse(BaseModel):

@@ -7,8 +7,8 @@ from pydantic import BaseModel, model_validator
 
 from server.models.manual_job import ManualJobAdvancedSettings
 from server.models.organize import OrganizeMode
+from server.models.storage import StorageLocator
 from server.models.storage import (
-    StorageLocator,
     infer_directory_locator,
     is_p115_to_local,
     normalize_file_locator,
@@ -86,7 +86,6 @@ class ScrapeJobCreate(BaseModel):
     source_id: int | None = None
     advanced_settings: ManualJobAdvancedSettings | None = None  # 高级设置
     replaces_job_id: str | None = None
-    # 成功记录纠正任务专用：保留原记录直到新任务成功。
     correction_history_id: str | None = None
     correction_tmdb_id: int | None = None
     correction_season: int | None = None
@@ -98,6 +97,7 @@ class ScrapeJobCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_storage_selection(self) -> "ScrapeJobCreate":
+        """Normalize storage locators and reject unsupported combinations."""
         self.file_locator = normalize_file_locator(self.file_path, self.file_locator)
         self.output_locator = infer_directory_locator(
             self.output_dir, self.output_locator

@@ -5,8 +5,7 @@ from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
 
-from server.api.manual_job import get_service as get_manual_job_service
-from server.api.scrape_job import get_service as get_scrape_job_service
+from server.api.deps import get_manual_job_service, get_scrape_job_service
 from server.main import app
 
 

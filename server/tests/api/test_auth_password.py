@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from server.api import auth as auth_api
-from server.core.auth import AuthContext
+from server.api.v1 import auth as auth_api
+from server.api.deps import AuthContext
 from server.models.auth import ChangePasswordRequest
 
 

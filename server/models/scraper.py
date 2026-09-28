@@ -82,6 +82,8 @@ class ScrapeRequest(_StorageValidatedScrapeRequest):
     allow_local_output: bool = False
     link_mode: OrganizeMode | None = None  # 整理模式
     auto_select: bool = True  # 自动选择最佳匹配
+    skip_emby_check: bool = False  # 跳过 Emby 冲突检查
+    file_action: Literal["overwrite", "rename"] | None = None
     advanced_settings: ManualJobAdvancedSettings | None = None  # 高级设置
 
 

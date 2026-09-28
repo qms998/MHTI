@@ -19,4 +19,5 @@ async def test_startup_failure_still_runs_shutdown(monkeypatch):
             pytest.fail("lifespan yielded after startup failure")
 
     init_database.assert_awaited_once_with()
-    shutdown.assert_awaited_once_with(None)
+    shutdown.assert_awaited_once()
+    assert shutdown.await_args.args[0] is None

@@ -7,9 +7,25 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from server.core.container import get_file_service, get_history_service
-from server.models.file import DirectoryEntry
+from server.api.deps import get_p115_service
+from server.bootstrap import get_file_service, get_history_service
 from server.main import app
+from server.models.cloud_115 import Cloud115Status
+from server.models.file import DirectoryEntry
+
+
+class Stub115Status:
+    """115 登录态替身：只提供 browse 需要的 get_status。"""
+
+    def __init__(self, is_logged_in: bool):
+        self._is_logged_in = is_logged_in
+
+    async def get_status(self) -> Cloud115Status:
+        return Cloud115Status(
+            enabled=self._is_logged_in,
+            app="alipaymini",
+            is_logged_in=self._is_logged_in,
+        )
 
 
 @pytest.fixture
@@ -70,7 +86,7 @@ class TestFilesAPI:
         second.touch()
 
         monkeypatch.setattr(
-            "server.api.files.calculate_fingerprint",
+            "server.application.library.calculate_fingerprint",
             lambda path: f"fingerprint:{path}",
         )
 
@@ -233,7 +249,7 @@ class TestHealthCheck:
             async def get_api_token(self):
                 return "tmdb-token"
 
-        from server.core import container
+        from server import bootstrap as container
 
         monkeypatch.setattr(container, "get_config_service", lambda: StubConfigService())
 
@@ -257,7 +273,7 @@ class TestHealthCheck:
             assert "database" in data["checks"]
 
     def test_health_endpoints_do_not_expose_database_errors(self, monkeypatch):
-        from server.core import database
+        from server.infrastructure import db as database
 
         async def fail_database():
             raise RuntimeError("secret database path and credentials")
@@ -309,7 +325,9 @@ class TestFileBrowseAPI:
         assert response.status_code in [200, 422]
 
     def test_browse_root_contains_115_virtual_entry(self, files_client):
-        """Default root browse should expose the virtual 115 entry."""
+        """已登录 115 时，默认根目录浏览应展示虚拟 115 入口。"""
+        app.dependency_overrides[get_p115_service] = lambda: Stub115Status(True)
+
         response = files_client.get("/api/files/browse?page_size=100")
 
         assert response.status_code == 200
@@ -321,6 +339,19 @@ class TestFileBrowseAPI:
         assert virtual_entry["provider"] == "115"
         assert virtual_entry["file_id"] == "0"
         assert virtual_entry["is_virtual"] is True
+
+    def test_browse_root_hides_115_virtual_entry_when_logged_out(self, files_client):
+        """未登录 115 时根目录不应出现虚入口（点进去只会报“请先登录”）。"""
+        app.dependency_overrides[get_p115_service] = lambda: Stub115Status(False)
+
+        response = files_client.get("/api/files/browse?page_size=100")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert all(entry["name"] != "115网盘" for entry in data["entries"])
+        assert all(entry.get("is_virtual") is not True for entry in data["entries"])
+        # total 与实际返回条目数一致（虚入口不参与分页计算）
+        assert data["total"] == len(data["entries"])
 
     def test_browse_provider_params_are_forwarded(self, files_client):
         """Browse API should forward provider/file_id params to the async 115 browse path."""

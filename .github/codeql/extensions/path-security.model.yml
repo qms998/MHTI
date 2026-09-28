@@ -10,11 +10,16 @@ extensions:
       # every downstream filesystem operation.
       - [
           "server",
-          "Member[core].Member[path_security].Member[validate_media_path].ReturnValue",
+          "Member[common].Member[path_security].Member[validate_media_path].ReturnValue",
           "path-injection",
         ]
       - [
           "server",
-          "Member[core].Member[path_security].Member[validate_media_directory].ReturnValue",
+          "Member[common].Member[path_security].Member[validate_media_directory].ReturnValue",
+          "path-injection",
+        ]
+      - [
+          "server",
+          "Member[common].Member[path_security].Member[validate_internal_staging_path].ReturnValue",
           "path-injection",
         ]
