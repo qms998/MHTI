@@ -3,6 +3,7 @@
 import re
 import shutil
 from pathlib import Path
+from server.common.file_cancellation import check_file_cancelled
 
 from server.common.exceptions import InvalidFolderError
 from server.common.limits import MAX_DISCOVERED_FILES, MAX_SUBTITLE_ASSOCIATE_VIDEOS
@@ -89,6 +90,7 @@ class SubtitleService:
 
         subtitles = []
         for file_path in folder.rglob("*"):
+            check_file_cancelled()
             if file_path.is_file() and file_path.suffix.lower() in SUBTITLE_EXTENSIONS:
                 if len(subtitles) >= MAX_DISCOVERED_FILES:
                     raise InvalidFolderError(
@@ -133,7 +135,7 @@ class SubtitleService:
                             str(folder),
                             reason=f"视频扫描结果超过上限（{MAX_DISCOVERED_FILES} 个文件）",
                         )
-                    video_files.append(file_path.name)
+                    video_files.append(str(file_path.relative_to(folder)))
         elif len(video_files) > MAX_SUBTITLE_ASSOCIATE_VIDEOS:
             raise InvalidFolderError(
                 str(folder),
@@ -154,6 +156,8 @@ class SubtitleService:
             matched_subs = []
 
             for sub in subtitles:
+                if Path(sub.path).parent.resolve() != video_path.parent:
+                    continue
                 # Get subtitle base name (without language tag)
                 sub_base = self._get_base_name(sub.filename)
                 if self._names_match(video_stem, sub_base):
