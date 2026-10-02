@@ -29,3 +29,10 @@ jobs:
         with:
           name: web-dist
           path: web/dist
+
+      - name: Deploy dist to dist branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web/dist
+          publish_branch: dist
